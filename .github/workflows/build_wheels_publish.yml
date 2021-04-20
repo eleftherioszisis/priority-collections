@@ -35,7 +35,7 @@ jobs:
         working-directory: dist
 
       - name: Store wheel as artifact
-      - uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2
         with:
           name: dist
           path: dist
@@ -54,11 +54,11 @@ jobs:
         - name: Build source tarball
           run: python setup.py sdist
 
-      - name: Store sdist as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: dist
-          path: dist
+        - name: Store sdist as artifact
+          uses: actions/upload-artifact@v2
+          with:
+            name: dist
+            path: dist
 
 
 
