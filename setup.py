@@ -22,8 +22,10 @@ setup(
     packages=find_packages(),
     ext_modules=cythonize(extensions, compiler_directives=compiler_directives),
     include_package_data=True,
+    use_scm_version=True,
     setup_requires=[
         'numpy>=1.13',
+        'setuptools_scm'
     ],
     install_requires=[
         'numpy>=1.13'
