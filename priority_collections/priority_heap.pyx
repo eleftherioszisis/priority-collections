@@ -6,7 +6,6 @@ from libc.math cimport fabs, fmax
 from libc.stdlib cimport free, realloc
 
 import numpy as np
-cimport numpy as np
 
 SIGNED_NUMPY_TYPE_MAP = {2 : np.int16, 4 : np.int32, 8 : np.int64}
 
