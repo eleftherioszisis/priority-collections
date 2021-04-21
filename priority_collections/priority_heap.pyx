@@ -242,7 +242,7 @@ cdef class MinHeap:
         return node_id, value
 
 
-cdef class MaxHeap(MinPriorityHeap):
+cdef class MaxHeap(MinHeap):
 
     cdef int cpush(self, index_t node_id, float_t value) except -1:
 

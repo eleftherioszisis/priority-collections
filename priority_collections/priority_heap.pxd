@@ -9,7 +9,7 @@ cdef packed struct Node:
     float_t value
 
 
-cdef class MinPriorityHeap:
+cdef class MinHeap:
 
     cdef index_t heap_ptr, capacity
 
@@ -27,7 +27,7 @@ cdef class MinPriorityHeap:
     cpdef (index_t, float_t) pop(self)
 
 
-cdef class MaxPriorityHeap(MinPriorityHeap):
+cdef class MaxHeap(MinHeap):
 
 
     cdef int cpush(self, index_t node_id, float_t value) except -1

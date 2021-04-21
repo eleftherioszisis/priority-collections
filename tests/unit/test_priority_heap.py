@@ -55,11 +55,11 @@ def build_heap(ids, values, capacity, heap_class, atol, rtol):
 
 
 def build_min_heap(ids, values, capacity, atol=0.0, rtol=1e-6):
-    return build_heap(ids, values, capacity, tested.MinPriorityHeap, atol, rtol)
+    return build_heap(ids, values, capacity, tested.MinHeap, atol, rtol)
 
 
 def build_max_heap(ids, values, capacity, atol=0.0, rtol=1e-6):
-    return build_heap(ids, values, capacity, tested.MaxPriorityHeap, atol, rtol)
+    return build_heap(ids, values, capacity, tested.MaxHeap, atol, rtol)
 
 
 def test_min_priority_heap__capacity():
