@@ -1,10 +1,7 @@
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, dist, Extension, find_packages
 
-try:
-    import numpy
-except ImportError:
-    raise ImportError('Numpy is not available.')
-
+# https://github.com/pypa/pip/issues/5761
+dist.Distribution().fetch_build_eggs(['Cython>=0.15.1', 'numpy>=1.10'])
 
 extensions = [
     Extension("priority_collections.priority_heap", ["priority_collections/priority_heap.pyx"])
