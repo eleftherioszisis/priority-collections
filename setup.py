@@ -12,7 +12,7 @@ setup(
     author='Eleftherios Zisis',
     author_email='eleftherios.zisis@epfl.ch',
     packages=find_packages(),
-    ext_modules=build_ext_modules(modules),
+    ext_modules=extensions,
     include_package_data=True,
     use_scm_version=True,
     setup_requires=[
