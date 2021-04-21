@@ -24,6 +24,7 @@ setup(
     setup_requires=[
         'setuptools>=18.0',
         'setuptools_scm',
+        'numpy>=1.19',
         'cython'
     ],
     install_requires=[
