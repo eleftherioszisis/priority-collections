@@ -1,2 +1,2 @@
-recursive-include priority_collections *.pyx *.pxd *.c
+recursive-include priority_collections *.pyx *.pxd
 global-exclude *.pyc *~ *.bak *.swp *.pyo
