@@ -149,7 +149,7 @@ cdef void max_heapify_up(Node* heap, index_t index, float_t atol, float_t rtol):
     max_heapify_up(heap, parent, atol, rtol)
 
 
-cdef class MinPriorityHeap:
+cdef class MinHeap:
 
     def __cinit__(self, index_t capacity, atol, rtol):
 
@@ -242,7 +242,7 @@ cdef class MinPriorityHeap:
         return node_id, value
 
 
-cdef class MaxPriorityHeap(MinPriorityHeap):
+cdef class MaxHeap(MinPriorityHeap):
 
     cdef int cpush(self, index_t node_id, float_t value) except -1:
 
