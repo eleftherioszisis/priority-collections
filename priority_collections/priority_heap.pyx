@@ -2,12 +2,12 @@
 # cython: boundscheck=False
 # cython: wraparound=False
 
-from libc.math cimport fabs, fmax
 from libc.stdlib cimport free, realloc
 
 import numpy as np
 
 SIGNED_NUMPY_TYPE_MAP = {2 : np.int16, 4 : np.int32, 8 : np.int64}
+FLOAT_NUMPY_TYPE_MAP = {4: np.float32, 8: np.float64}
 
 
 ctypedef fused realloc_ptr:
@@ -62,102 +62,75 @@ cdef inline index_t get_parent(index_t index):
     return (index - 1) / 2
 
 
-cdef inline bint isclose(x, y, atol, rtol):
-    """Behaves like the math.isclose function"""
-    return fabs(x - y) <= fmax(atol, rtol * fmax(fabs(x), fabs(y)))
-
-
-cdef inline bint less(a, b, atol, rtol):
-    """Returns True if a is strictly smaller than b"""
-    return not isclose(a, b, atol, rtol) and a < b
-
-
-cdef inline bint greater(a, b, atol, rtol):
-    """Returns True if a is strictly greater that b"""
-    return not isclose(a, b, atol, rtol) and a > b
-
-
-cdef inline bint less_equal(a, b, atol, rtol):
-    """Returns True if a is less or equal than b"""
-    return isclose(a, b, atol, rtol) or a < b
-
-
-cdef inline bint greater_equal(a, b, atol, rtol):
-    """Returns True if a is greater or equal than b"""
-    return isclose(a, b, atol, rtol) or a > b
-
-
-cdef void min_heapify_down(Node* heap, index_t index, index_t heap_length, float_t atol, float_t rtol):
+cdef void min_heapify_down(Node* heap, index_t index, index_t heap_length):
 
     cdef :
         index_t left = get_left_child(index)
         index_t right = get_right_child(index)
         index_t largest = index
 
-    if left < heap_length and less_equal(heap[left].value, heap[largest].value, atol, rtol):
+    if left < heap_length and heap[left].value <= heap[largest].value:
         largest = left
 
-    if right < heap_length and less_equal(heap[right].value, heap[largest].value, atol, rtol):
+    if right < heap_length and heap[right].value <= heap[largest].value:
         largest = right
 
     if largest != index:
         swap(heap, index, largest)
-        min_heapify_down(heap, largest, heap_length, atol, rtol)
+        min_heapify_down(heap, largest, heap_length)
 
 
-cdef void max_heapify_down(Node* heap, index_t index, index_t heap_length, float_t atol, float_t rtol):
+cdef void max_heapify_down(Node* heap, index_t index, index_t heap_length):
 
     cdef:
         index_t left = get_left_child(index)
         index_t right = get_right_child(index)
         index_t smallest = index
 
-    if left < heap_length and greater_equal(heap[left].value, heap[smallest].value, atol, rtol):
+    if left < heap_length and heap[left].value >= heap[smallest].value:
         smallest = left
 
-    if right < heap_length and greater_equal(heap[right].value, heap[smallest].value, atol, rtol):
+    if right < heap_length and heap[right].value >= heap[smallest].value:
         smallest = right
 
     if smallest != index:
         swap(heap, index, smallest)
-        max_heapify_down(heap, smallest, heap_length, atol, rtol)
+        max_heapify_down(heap, smallest, heap_length)
 
 
-cdef void min_heapify_up(Node* heap, index_t index, float_t atol, float_t rtol):
-
-    if index == 0:
-        return
-
-    cdef index_t parent = get_parent(index)
-
-    if greater(heap[parent].value, heap[index].value, atol, rtol):
-        swap(heap, parent, index)
-
-    min_heapify_up(heap, parent, atol, rtol)
-
-
-cdef void max_heapify_up(Node* heap, index_t index, float_t atol, float_t rtol):
+cdef void min_heapify_up(Node* heap, index_t index):
 
     if index == 0:
         return
 
     cdef index_t parent = get_parent(index)
 
-    if less(heap[parent].value, heap[index].value, atol, rtol):
+    if heap[parent].value > heap[index].value:
         swap(heap, parent, index)
 
-    max_heapify_up(heap, parent, atol, rtol)
+    min_heapify_up(heap, parent)
+
+
+cdef void max_heapify_up(Node* heap, index_t index):
+
+    if index == 0:
+        return
+
+    cdef index_t parent = get_parent(index)
+
+    if heap[parent].value < heap[index].value:
+        swap(heap, parent, index)
+
+    max_heapify_up(heap, parent)
 
 
 cdef class MinHeap:
 
-    def __cinit__(self, index_t capacity, atol, rtol):
+    def __cinit__(self, index_t capacity, index_t decimals=6):
 
-        self.capacity = capacity
-        self.heap_ptr = 0
-
-        self.atol = atol
-        self.rtol = rtol
+        self._capacity = capacity
+        self._heap_ptr = 0
+        self._decimals = decimals
 
         safe_realloc(&self.heap, capacity)
 
@@ -165,36 +138,45 @@ cdef class MinHeap:
         free(self.heap)
 
     def __bool__(self):
-        return self.heap_ptr > 0
+        return self._heap_ptr > 0
 
     def __len__(self):
-        return self.heap_ptr
+        """Returns the number of elements in the heap"""
+        return self._heap_ptr
 
     cdef inline bint empty(self):
-        return self.heap_ptr <= 0
+        """Returns true if no elements in the heap"""
+        return self._heap_ptr <= 0
 
-    cdef int cpush(self, index_t node_id, float_t value) except -1:
+    cdef inline float_t fixed_point_to_float(self, index_t fixed_point_value):
+        return fixed_point_value / <float_t>(10 ** self._decimals)
+
+    cdef inline index_t float_to_fixed_point(self, float_t value):
+        return <index_t>(value * (10 ** self._decimals))
+
+    cdef int cpush(self, index_t node_id, index_t value) except -1:
 
         # Resize if capacity not sufficient
-        if self.heap_ptr >= self.capacity:
+        if self._heap_ptr >= self._capacity:
 
-            self.capacity *= 2
+            self._capacity *= 2
             # Since safe_realloc can raise MemoryError, use `except -1`
-            safe_realloc(&self.heap, self.capacity)
+            safe_realloc(&self.heap, self._capacity)
 
         # Put element as last element of heap
-        self.heap[self.heap_ptr].id = node_id
-        self.heap[self.heap_ptr].value = value
+        self.heap[self._heap_ptr].id = node_id
+        self.heap[self._heap_ptr].value = value
+        self.heap[self._heap_ptr].pos = self._heap_ptr
 
         # Heapify up
-        min_heapify_up(self.heap, self.heap_ptr, self.atol, self.rtol)
+        min_heapify_up(self.heap, self._heap_ptr)
 
         # Increase element count
-        self.heap_ptr += 1
+        self._heap_ptr += 1
 
         return 0
 
-    cdef int cpop(self, index_t* out_id, float_t* out_value) except -1:
+    cdef int cpop(self, index_t* out_id, index_t* out_value) except -1:
 
         if self.empty():
             return -1
@@ -204,22 +186,51 @@ cdef class MinHeap:
         out_value[0] = self.heap[0].value
 
         # swap with last element
-        swap(self.heap, 0, self.heap_ptr - 1)
-
-        if not self.empty():
-            min_heapify_down(self.heap, 0, self.heap_ptr - 1, self.atol, self.rtol)
+        swap(self.heap, 0, self._heap_ptr - 1)
 
         # reduce the array length
-        self.heap_ptr -= 1
+        self._heap_ptr -= 1
+
+        if not self.empty():
+            min_heapify_down(self.heap, 0, self._heap_ptr)
 
         return 0
 
+    cdef int cupdate(self, index_t node_id, index_t value) except -1:
+
+        if 0 >= node_id >= self._heap_ptr:
+            return -1
+
+        # the actual position of the node before any swapping took place
+        cdef index_t pos = self.heap[node_id].pos
+
+        # update its value
+        self.heap[pos].value = value
+
+        cdef index_t parent = get_parent(pos)
+
+        if value > self.heap[parent].value:
+            min_heapify_down(self.heap, pos, self.heap_ptr)
+        else:
+            min_heapify_down(self.heap, pos, self.heap_ptr)
+
+    cpdef void push(self, index_t node_id, float_t value):
+        self.cpush(node_id, self.float_to_fixed_point(value))
+
+    cpdef (index_t, float_t) pop(self):
+        cdef:
+            index_t node_id
+            index_t fixed_point_value
+
+        self.cpop(&node_id, &fixed_point_value)
+
+        return node_id, self.fixed_point_to_float(fixed_point_value)
+
+    cpdef void update(self, index_t node_id, float_t value):
+        self.cupdate(node_id, self.float_to_fixed_point(value))
 
     @property
     def ids(self):
-        return self.get_ids()
-
-    cpdef np.ndarray get_ids(self):
         cdef:
             index_t n_elements = len(self)
             index_t[:] res = np.empty(n_elements, dtype=SIGNED_NUMPY_TYPE_MAP[sizeof(index_t)])
@@ -229,43 +240,42 @@ cdef class MinHeap:
 
         return np.asarray(res)
 
-
-    cpdef void push(self, index_t node_id, float_t value):
-        self.cpush(node_id, value)
-
-    cpdef (index_t, float_t) pop(self):
+    @property
+    def values(self):
         cdef:
-            index_t node_id
-            float_t value
+            index_t n_elements = len(self)
+            float_t[:] res = np.empty(n_elements, dtype=FLOAT_NUMPY_TYPE_MAP[sizeof(float_t)])
 
-        self.cpop(&node_id, &value)
-        return node_id, value
+        for i in range(n_elements):
+            res[i] = self.heap[i].value
+
+        return np.asarray(res) * 0.1 ** self._decimals
 
 
 cdef class MaxHeap(MinHeap):
 
-    cdef int cpush(self, index_t node_id, float_t value) except -1:
+    cdef int cpush(self, index_t node_id, index_t value) except -1:
 
         # Resize if capacity not sufficient
-        if self.heap_ptr >= self.capacity:
+        if self._heap_ptr >= self._capacity:
 
-            self.capacity *= 2
+            self._capacity *= 2
             # Since safe_realloc can raise MemoryError, use `except -1`
-            safe_realloc(&self.heap, self.capacity)
+            safe_realloc(&self.heap, self._capacity)
 
         # Put element as last element of heap
-        self.heap[self.heap_ptr].id = node_id
-        self.heap[self.heap_ptr].value = value
+        self.heap[self._heap_ptr].id = node_id
+        self.heap[self._heap_ptr].value = value
 
         # Heapify up
-        max_heapify_up(self.heap, self.heap_ptr, self.atol, self.rtol)
+        max_heapify_up(self.heap, self._heap_ptr)
 
         # Increase element count
-        self.heap_ptr += 1
+        self._heap_ptr += 1
 
         return 0
 
-    cdef int cpop(self, index_t* out_id, float_t* out_value) except -1:
+    cdef int cpop(self, index_t* out_id, index_t* out_value) except -1:
 
         if self.empty():
             return -1
@@ -275,12 +285,12 @@ cdef class MaxHeap(MinHeap):
         out_value[0] = self.heap[0].value
 
         # swap with last element
-        swap(self.heap, 0, self.heap_ptr - 1)
-
-        if not self.empty():
-            max_heapify_down(self.heap, 0, self.heap_ptr - 1, self.atol, self.rtol)
+        swap(self.heap, 0, self._heap_ptr - 1)
 
         # reduce the array length
-        self.heap_ptr -= 1
+        self._heap_ptr -= 1
+
+        if not self.empty():
+            max_heapify_down(self.heap, 0, self._heap_ptr)
 
         return 0

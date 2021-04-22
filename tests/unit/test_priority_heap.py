@@ -35,7 +35,7 @@ def _assert_heap_equal(heap, expected_ids, expected_values):
         )
         raise AssertionError(msg)
 
-def build_heap(ids, values, capacity, heap_class, atol, rtol):
+def build_heap(ids, values, capacity, heap_class, decimals):
     """
     Args:
         ids (Iterable): iterable of integer ids
@@ -45,7 +45,7 @@ def build_heap(ids, values, capacity, heap_class, atol, rtol):
     Returns:
         MinPriorityHeap
     """
-    heap = heap_class(capacity, atol, rtol)
+    heap = heap_class(capacity, decimals)
 
     for node_id, value in zip(ids, values):
 
@@ -54,15 +54,11 @@ def build_heap(ids, values, capacity, heap_class, atol, rtol):
     return heap
 
 
-def build_min_heap(ids, values, capacity, atol=0.0, rtol=1e-6):
-    return build_heap(ids, values, capacity, tested.MinHeap, atol, rtol)
+def build_min_heap(ids, values, capacity, decimals=6):
+    return build_heap(ids, values, capacity, tested.MinHeap, decimals)
 
 
-def build_max_heap(ids, values, capacity, atol=0.0, rtol=1e-6):
-    return build_heap(ids, values, capacity, tested.MaxHeap, atol, rtol)
-
-
-def test_min_priority_heap__capacity():
+def test_min_priority_heap__attributes_properties():
     """
     heap = MinPriorityHeap(1)
 
@@ -70,6 +66,12 @@ def test_min_priority_heap__capacity():
 
     npt.assert_equal(len)
     """
+    heap = build_min_heap([0, 1, 2], [0.0, 0.1, 0.2], 3, decimals=5)
+
+    npt.assert_array_equal(heap.ids, [0, 1, 2])
+    npt.assert_allclose(heap.values, [0.0, 0.1, 0.2])
+    npt.assert_almost_equal(heap._decimals, 5)
+    npt.assert_equal(heap._capacity, 3)
 
 
 def test_min_priority_heap__invariant():
@@ -98,20 +100,36 @@ def test_min_priority_heap__epsilon():
     ids = [0, 1, 2]
 
     values = [0.1, 0.1, 0.1]
-    heap = build_min_heap(ids, values, capacity=10, atol=0.0, rtol=1e-2)
-    _assert_heap_equal(heap, ids, values)
-
-    values = [0.2000003, 0.2000000001, 0.200000002]
-    heap = build_min_heap(ids, values, capacity=10, atol=1e-6, rtol=0.0)
+    heap = build_min_heap(ids, values, capacity=10, decimals=2)
     _assert_heap_equal(heap, ids, values)
 
     values = [0.0000000001, 0.0000000001, 0.0000000001]
-    heap = build_min_heap(ids, values, capacity=10, atol=1e-10)
+    heap = build_min_heap(ids, values, capacity=10, decimals=10)
     _assert_heap_equal(heap, ids, values)
 
     values = [0.1, 0.2, 0.1]
-    heap = build_min_heap(ids, values, capacity=10, atol=1e-2, rtol=0.0)
+    heap = build_min_heap(ids, values, capacity=10, decimals=2)
     _assert_heap_equal(heap, [0, 2, 1], [0.1, 0.1, 0.2])
+
+
+def build_max_heap(ids, values, capacity, decimals=6):
+    return build_heap(ids, values, capacity, tested.MaxHeap, decimals)
+
+
+def test_max_priority_heap__attributes_properties():
+    """
+    heap = MinPriorityHeap(1)
+
+    heap.push(1, 0.0)
+
+    npt.assert_equal(len)
+    """
+    heap = build_max_heap([0, 1, 2], [0.2, 0.1, 0.0], capacity=3, decimals=1)
+
+    npt.assert_array_equal(heap.ids, [0, 1, 2])
+    npt.assert_allclose(heap.values, [0.2, 0.1, 0.0])
+    npt.assert_equal(heap._decimals, 1)
+    npt.assert_equal(heap._capacity, 3)
 
 
 def test_max_priority_heap__epsilon():
@@ -119,19 +137,19 @@ def test_max_priority_heap__epsilon():
     ids = [0, 1, 2]
 
     values = [0.1, 0.1, 0.1]
-    heap = build_max_heap(ids, values, capacity=10, atol=0.0, rtol=1e-2)
+    heap = build_max_heap(ids, values, capacity=10, decimals=2)
     _assert_heap_equal(heap, ids, values)
 
     values = [0.2000003, 0.2000000001, 0.200000002]
-    heap = build_max_heap(ids, values, capacity=10, atol=1e-6, rtol=0.0)
+    heap = build_max_heap(ids, values, capacity=10, decimals=8)
     _assert_heap_equal(heap, ids, values)
 
     values = [0.0000000001, 0.0000000001, 0.0000000001]
-    heap = build_max_heap(ids, values, capacity=10, atol=1e-10)
+    heap = build_max_heap(ids, values, capacity=10, decimals=10)
     _assert_heap_equal(heap, ids, values)
 
     values = [0.1, 0.2, 0.1]
-    heap = build_max_heap(ids, values, capacity=10, atol=1e-2, rtol=0.0)
+    heap = build_max_heap(ids, values, capacity=10, decimals=2)
     _assert_heap_equal(heap, [1, 0, 2], [0.2, 0.1, 0.1])
 
 
