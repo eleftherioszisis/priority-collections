@@ -1,7 +1,7 @@
 cimport numpy as np
 
 ctypedef np.npy_int64 index_t
-ctypedef np.npy_float64 float_t
+ctypedef np.npy_float32 float_t
 
 
 cdef packed struct Node:

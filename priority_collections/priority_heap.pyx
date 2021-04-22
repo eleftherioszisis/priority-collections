@@ -44,7 +44,10 @@ cdef void safe_realloc(realloc_ptr* p, size_t nelems) nogil except *:
 
 cdef inline void swap(Node* heap, pos1, pos2):
     """Swap pos1 and pos2 in the heap array"""
-    heap[pos1], heap[pos2] = heap[pos2], heap[pos1]
+    heap[heap[pos1].id].pos, heap[heap[pos2].id].pos = \
+    heap[heap[pos2].id].pos, heap[heap[pos1].id].pos
+    heap[pos1].id, heap[pos2].id = heap[pos2].id, heap[pos1].id
+    heap[pos1].value, heap[pos2].value = heap[pos2].value, heap[pos1].value
 
 
 cdef inline index_t get_left_child(index_t index):
@@ -196,23 +199,28 @@ cdef class MinHeap:
 
         return 0
 
-    cdef int cupdate(self, index_t node_id, index_t value) except -1:
+    cdef int cupdate(self, index_t node_id, index_t new_value) except -1:
 
         if 0 >= node_id >= self._heap_ptr:
             return -1
 
         # the actual position of the node before any swapping took place
-        cdef index_t pos = self.heap[node_id].pos
+        cdef:
+            index_t pos = self.heap[node_id].pos
+            index_t old_value = self.heap[pos].value
 
-        # update its value
-        self.heap[pos].value = value
+        print(node_id, pos, self.heap[pos].id)
+        if new_value == old_value:
+            return 0
 
-        cdef index_t parent = get_parent(pos)
+        self.heap[pos].value = new_value
 
-        if value > self.heap[parent].value:
-            min_heapify_down(self.heap, pos, self.heap_ptr)
+        if new_value > old_value:
+            min_heapify_down(self.heap, pos, self._heap_ptr)
         else:
-            min_heapify_down(self.heap, pos, self.heap_ptr)
+            min_heapify_up(self.heap, pos)
+
+        return 0
 
     cpdef void push(self, index_t node_id, float_t value):
         self.cpush(node_id, self.float_to_fixed_point(value))
