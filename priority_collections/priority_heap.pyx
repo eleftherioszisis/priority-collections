@@ -209,7 +209,6 @@ cdef class MinHeap:
             index_t pos = self.heap[node_id].pos
             index_t old_value = self.heap[pos].value
 
-        print(node_id, pos, self.heap[pos].id)
         if new_value == old_value:
             return 0
 
