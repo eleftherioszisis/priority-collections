@@ -1,12 +1,12 @@
 from setuptools import setup, dist, Extension, find_packages
 
 # https://github.com/pypa/pip/issues/5761
-dist.Distribution().fetch_build_eggs(['Cython>=0.15.1', 'numpy>=1.10'])
+dist.Distribution().fetch_build_eggs(['Cython>=0.29.0', 'numpy>=1.10'])
 
 import numpy
 
 extensions = [
-    Extension("priority_collections.priority_heap", ["priority_collections/priority_heap.pyx"])
+    Extension("priority_collections.priority_heap", ["priority_collections/priority_heap.pyx"], define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")])
 ]
 
 
