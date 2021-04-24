@@ -1,4 +1,4 @@
-name : Build source distribution, wheels, test and publish
+name : Build sdist & wheels, deploy
 
 on:
   push:
