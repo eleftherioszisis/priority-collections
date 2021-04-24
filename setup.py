@@ -5,8 +5,13 @@ dist.Distribution().fetch_build_eggs(['Cython>=0.29.0', 'numpy>=1.10'])
 
 import numpy
 
+
+compiler_args = ["-DNDEBUG", "-O3"]
+macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
+
+
 extensions = [
-    Extension("priority_collections.priority_heap", ["priority_collections/priority_heap.pyx"], define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")])
+    Extension("priority_collections.priority_heap", ["priority_collections/priority_heap.pyx"], define_macros=macros, extra_compile_args=compiler_args)
 ]
 
 
