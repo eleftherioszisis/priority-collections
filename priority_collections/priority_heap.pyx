@@ -131,8 +131,8 @@ cdef class MinHeap:
 
     def __cinit__(self, index_t capacity, index_t decimals=6):
 
-        self._capacity = capacity
         self._heap_ptr = 0
+        self._capacity = capacity
         self._decimals = decimals
 
         safe_realloc(&self.heap, capacity)
@@ -151,6 +151,13 @@ cdef class MinHeap:
         """Returns true if no elements in the heap"""
         return self._heap_ptr <= 0
 
+    cdef inline void append(self, index_t node_id, index_t value):
+
+        # Put element as last element of heap
+        self.heap[self._heap_ptr].id = node_id
+        self.heap[self._heap_ptr].value = value
+        self.heap[self._heap_ptr].pos = self._heap_ptr
+
     cdef inline float_t fixed_point_to_float(self, index_t fixed_point_value):
         return fixed_point_value / <float_t>(10 ** self._decimals)
 
@@ -166,10 +173,7 @@ cdef class MinHeap:
             # Since safe_realloc can raise MemoryError, use `except -1`
             safe_realloc(&self.heap, self._capacity)
 
-        # Put element as last element of heap
-        self.heap[self._heap_ptr].id = node_id
-        self.heap[self._heap_ptr].value = value
-        self.heap[self._heap_ptr].pos = self._heap_ptr
+        self.append(node_id, value)
 
         # Heapify up
         min_heapify_up(self.heap, self._heap_ptr)
@@ -270,9 +274,7 @@ cdef class MaxHeap(MinHeap):
             # Since safe_realloc can raise MemoryError, use `except -1`
             safe_realloc(&self.heap, self._capacity)
 
-        # Put element as last element of heap
-        self.heap[self._heap_ptr].id = node_id
-        self.heap[self._heap_ptr].value = value
+        self.append(node_id, value)
 
         # Heapify up
         max_heapify_up(self.heap, self._heap_ptr)
@@ -301,3 +303,26 @@ cdef class MaxHeap(MinHeap):
             max_heapify_down(self.heap, 0, self._heap_ptr)
 
         return 0
+
+    cdef int cupdate(self, index_t node_id, index_t new_value) except -1:
+
+        if 0 >= node_id >= self._heap_ptr:
+            return -1
+
+        # the actual position of the node before any swapping took place
+        cdef:
+            index_t pos = self.heap[node_id].pos
+            index_t old_value = self.heap[pos].value
+
+        if new_value == old_value:
+            return 0
+
+        self.heap[pos].value = new_value
+
+        if new_value < old_value:
+            max_heapify_down(self.heap, pos, self._heap_ptr)
+        else:
+            max_heapify_up(self.heap, pos)
+
+        return 0
+

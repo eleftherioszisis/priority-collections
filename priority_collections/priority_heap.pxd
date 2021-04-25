@@ -19,6 +19,7 @@ cdef class MinHeap:
     cdef inline bint empty(self)
     cdef inline float_t fixed_point_to_float(self, index_t fixed_point_value)
     cdef inline index_t float_to_fixed_point(self, float_t value)
+    cdef inline void append(self, index_t node_id, index_t value)
 
     cdef int cpush(self, index_t node_id, index_t value) except -1
     cdef int cpop(self, index_t* out_id, index_t* out_value) except -1
@@ -34,4 +35,5 @@ cdef class MaxHeap(MinHeap):
 
     cdef int cpush(self, index_t node_id, index_t value) except -1
     cdef int cpop(self, index_t* out_id, index_t* out_value) except -1
+    cdef int cupdate(self, index_t node_id, index_t value) except -1
 

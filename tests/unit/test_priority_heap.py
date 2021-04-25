@@ -237,3 +237,63 @@ def test_max_priority_heap__invariant():
     heap = build_max_heap([0, 1], [0.0, 0.1], capacity=10)
     _assert_heap_equal(heap, [1, 0], [0.1, 0.0])
 
+
+def test_max_priority_heap__update():
+
+    h = tested.MaxHeap(capacity=1, decimals=3)
+    h.push(0, 1.3)
+    h.update(0, 0.4)
+    _assert_heap_equal(h, [0], [0.4])
+
+    h = tested.MaxHeap(capacity=1, decimals=3)
+    h.push(0, 0.4)
+    h.update(0, 1.3)
+    _assert_heap_equal(h, [0], [1.3])
+
+    h = tested.MaxHeap(capacity=1, decimals=3)
+    h.push(0, 0.4)
+    h.update(0, 1.3)
+    h.update(0, 0.4)
+    _assert_heap_equal(h, [0], [0.4])
+
+    h = tested.MaxHeap(capacity=2, decimals=3)
+    h.push(0, 0.4)
+    print(h.ids, h.values)
+    h.push(1, 11.0)
+    print(h.ids, h.values)
+    h.update(0, 10.0)
+    print(h.ids, h.values)
+    _assert_heap_equal(h, [1, 0], [11., 10.])
+
+    h = tested.MaxHeap(capacity=2, decimals=3)
+    h.push(0, 0.4)
+    h.push(1, 11.0)
+    h.update(1, 0.3)
+    _assert_heap_equal(h, [0, 1], [0.4, 0.3])
+
+    h = tested.MaxHeap(capacity=2, decimals=3)
+    h.push(0, 0.4)
+    h.push(1, 11.0)
+    h.update(0, 12.0)
+    h.update(1, -1.)
+    h.update(0, -2.)
+    _assert_heap_equal(h, [1, 0], [-1., -2.])
+
+    h = tested.MaxHeap(capacity=3, decimals=4)
+    h.push(0, 0.4)
+    h.push(1, 11.0)
+    h.push(2, 1.2)
+    h.push(3, 100.)
+    h.push(4, 51.)
+    h.push(5, 100000.)
+
+    h.update(4, -1.)
+    print(h.values)
+    h.update(4, 10.)
+    print(h.values)
+    h.update(4, 0.1)
+
+    h.update(5, 8000.)
+    h.update(2, 12.)
+
+    _assert_heap_equal(h, [5, 3, 2, 1, 0, 4], [8000., 100., 12., 11., 0.4, 0.1])
